@@ -14,7 +14,6 @@
       ]
     ],
     "userInterfaceStyle": "light",
-    "plugins":["@react-native-voice/voice"],
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
