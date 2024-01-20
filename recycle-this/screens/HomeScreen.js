@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
+import { View, Button, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
-import getLocation from '../utils/getLocation';
+import getLocation from '../util/getLocation';
 import Icon from 'react-native-vector-icons/MaterialIcons'; // Import Icon
 import { Audio } from 'expo-av';
-import AudioRecorder from '../utils/AudioRecorder';
+import AudioRecord from '../AudioRecord';
 
 
 
@@ -43,6 +43,7 @@ const HomeScreen = () => {
     });
 
     setRecordings(allRecordings);
+    console.log("all recordings: ", allRecordings)
   }
 //   function getRecordingLines() {}
   
@@ -75,11 +76,21 @@ const HomeScreen = () => {
       startRecording();
     }
 
-    console.log("Pressed");
+    console.log("Pressed"); 
+  };
+
+  const playRecording = async (uri) => {
+    try {
+      const { sound } = await Audio.Sound.createAsync({ uri: uri });
+      await sound.playAsync();
+    } catch (error) {
+      console.error("Couldn't play the recording. Error:", error);
+    }
   };
 
   return (
     <View style={styles.container}>
+      
       {location && (
         <MapView
           style={styles.map}
@@ -104,8 +115,14 @@ const HomeScreen = () => {
       <TouchableOpacity style={styles.micButton} onPress={handlePress}>
         <Icon name="mic" size={30} color="#FFF" />
       </TouchableOpacity>
-
-
+      {recordings.length > 0 && (
+      <View style={styles.playButton}>
+        <Button
+          title="Play Last Recording"
+          onPress={() => playRecording(recordings[recordings.length - 1].file)}
+        />
+      </View>
+    )}
     </View>
   );
 };
@@ -137,7 +154,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
+  },
+  playButton: {
+    position: 'absolute',
+    paddingTop: 50,
+    
   }
+  
+  
 });
 
 export default HomeScreen;
