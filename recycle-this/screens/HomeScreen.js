@@ -1,13 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { View, Button, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
-import getLocation from '../util/getLocation';
+import getLocation from '../utils/getLocation';
 import Icon from 'react-native-vector-icons/MaterialIcons'; // Import Icon
 import { Audio } from 'expo-av';
-import AudioRecord from '../AudioRecord';
-
-
-
 
 const HomeScreen = () => {
   const [recording, setRecording] = useState();
@@ -45,7 +41,6 @@ const HomeScreen = () => {
     setRecordings(allRecordings);
     console.log("all recordings: ", allRecordings)
   }
-//   function getRecordingLines() {}
   
   function clearRecordings() {
     setRecordings([]);

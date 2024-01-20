@@ -9,7 +9,8 @@
       [
         "expo-av",
         {
-          "microphonePermission": "Allow Recycle This to access your phone"
+          "microphonePermission": "Allow Recycle This to access your phone.",
+          "speechRecognitionPermission": "Allow Recycle this to securely recognize user speech."
         }
       ]
     ],
