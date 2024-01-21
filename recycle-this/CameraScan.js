@@ -34,24 +34,60 @@ const CameraScan = ( { onHide }) => {
     );
   }
 
+  const recyclableMaterials = ['plastic', 'glass', 'paper', 'metal']; // List of recyclable material types
+
   const takePic = async () => {
     let options = {
       quality: 1,
       base64: true,
       exif: false,
     };
-
-    let newPhoto = await cameraRef.current.takePictureAsync(options).then((phot)=>{
-        query(phot).then(()=>{
-            console.log('PLEASe')
-        })
-    })
-    setPhoto(newPhoto);
-    
-    console.log(newPhoto.uri); 
+  
+    try {
+      let newPhoto = await cameraRef.current.takePictureAsync(options);
+      let item_data = await query(newPhoto); // Assuming this returns an array of objects with label and score
+  
+      setPhoto(newPhoto); // Update state with the new photo
+      console.log(newPhoto.uri); // Log the URI of the new photo
+  
+      // Analyze the item data to determine if it's recyclable, disposable, or not identifiable
+      const recyclableMaterials = ['plastic', 'glass', 'paper', 'metal'];
+      let recyclableScore = 0;
+      let otherScore = 0;
+      let isIdentifiable = true;
+      
+      // Sum the scores for recyclable materials and 'others'
+      item_data.forEach(item => {
+        if (recyclableMaterials.includes(item.label.toLowerCase())) {
+          recyclableScore += item.score;
+        } else if (item.label.toLowerCase() === 'others') {
+          otherScore += item.score;
+        }
+      });
+      
+      // Determine the recyclability of the item
+      if (recyclableScore > otherScore) {
+        Alert.alert("Recyclable", "This item is recyclable. Please move to the closest recycling bin to recycle it.");
+      } else if (otherScore > recyclableScore) {
+        Alert.alert("Disposable", "This item is disposable. Please dispose of it in the nearest waste bin.");
+      } else {
+        // Check if the scores are close to each other, implying non-identifiability
+        const threshold = 0.1; // Define a threshold for score differences
+        isIdentifiable = !item_data.some(item => Math.abs(item.score - (1 / item_data.length)) > threshold);
+        
+        if (isIdentifiable) {
+          Alert.alert("Unidentifiable", "The item is not able to be identified as recyclable or disposable.");
+        } else {
+          Alert.alert("Indeterminate", "This item is mixed and cannot be determined.");
+        }
+      }
+    } catch (error) {
+      console.error('Error taking picture or querying item type:', error);
+    }
   };
+  
 
-
+try{
   if (photo) {
     let sharePic = () => {
       shareAsync(photo.uri).then(() => {
@@ -66,7 +102,10 @@ const CameraScan = ( { onHide }) => {
     };
 
   }
+} catch (error)
+{
 
+};
 
 
   return (
@@ -79,7 +118,34 @@ const CameraScan = ( { onHide }) => {
     </Camera>
   );
 };
+function getLabelOfHighestScore(data) {
+  if (!Array.isArray(data)) {
+    console.error('Invalid data: expected an array');
+    return;
+  }
 
+  const highestScoreLabel = data.reduce((highest, current) => {
+    console.log(`In function: ${(current.score > highest.score) ? current : highest}`);
+    return (current.score > highest.score) ? current : highest;
+  }, { score: -Infinity }); // Start with a lowest possible score
+
+  console.log(`Exiting function: ${highestScoreLabel.label}`);
+  return highestScoreLabel.label;
+}
+
+
+
+const uploadImageToModel = async (imageUri) => {
+  console.log("Uploading image to model's endpoint");
+  const data = new FormData();
+  data.append("photo", {
+    uri: imageUri,
+    type: "image/jpeg",
+    name: "upload.jpg",
+  });
+
+
+};
 async function query(uri){
     try {
 
@@ -90,15 +156,15 @@ async function query(uri){
           body: uri,
         }
         );
-  
+        
+        var json;
         const result = await response.json().then((result)=>{
             console.log(result);
+            json = result;
         });
-        console.log("ishaan I blame you for everything")
+        console.log(json[0].label);
         
-  
-        
-        return result;
+        return json;
       } catch (error) {
         console.error(error);
       }

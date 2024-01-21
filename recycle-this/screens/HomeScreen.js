@@ -11,6 +11,7 @@ import { Camera } from 'expo-camera';
 import * as MediaLibrary from 'expo-media-library';
 import { shareAsync } from 'expo-sharing';
 import CameraScan from '../CameraScan';
+import {apiCall} from '../components/openAIModule';
 
 
 
@@ -51,53 +52,6 @@ const HomeScreen = () => {
 
     console.log("Toggling camera, showCamera:", !showCamera);
   };
-
-  takePic = async () => {
-    
-    let options = {
-      quality: 0.5, // adjust the quality for performance
-      base64: true,
-      exif: false,
-    };
-    console.log("loc 121")
-    let newPhoto = await cameraRef.current.takePictureAsync(options);
-    console.log("loc 15")
-    setPhoto(newPhoto);
-    console.log("loc 13")
-    await uploadImageToModel(newPhoto.uri);
-    console.log("loc 2")
-  };
-  
-  // upload image to model's endpoint
-
-  const uploadImageToModel = async (imageUri) => {
-    console.log("loc 1")
-    const data = new FormData();
-    data.append("photo", {
-      uri: imageUri,
-      type: "image/jpeg", 
-      name: "upload.jpg", 
-    });
-
-    try {
-      const response = await fetch("https://api-inference.huggingface.co/models/Giecom/giecom-vit-model-clasification-waste", 
-      {
-        headers: { Authorization: "Bearer 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" },
-        method: "POST",
-        body: data,
-      }
-      );
-
-      const result = await response.json();
-      console.log("ishaan I blame you for everything")
-
-
-      console.log(result);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
   
   const convertAudioToBase64 = async (uri) => {
     try {
@@ -201,11 +155,21 @@ const HomeScreen = () => {
     setRecordings(allRecordings);
     const uri = recording.getURI();
     const base64Audio = await convertAudioToBase64(uri);
+    
+    const transcription = await sendAudioToSpeechToTextAPI(base64Audio).then((transcription)=>{
+      openai.completions.create({
+        model: 'gpt-3.5-turbo-instruct',
+        prompt: transcription + " Answer in 10 words or less."
+    }).then((msg)=>{Alert.alert(transcription, msg.choices[0]["text"]);console.log(msg.choices[0]["text"])});
+      // console.log("all recordings: ", allRecordings)
 
-    const transcription = await sendAudioToSpeechToTextAPI(base64Audio);
-    console.log(transcription);
-    console.log("all recordings: ", allRecordings)
+    });
+    // console.log(transcription);
+
   }
+    
+    // console.log("all recordings: ", allRecordings)
+  
 
   function clearRecordings() {
     setRecordings([]);
@@ -346,8 +310,14 @@ const HomeScreen = () => {
 
       <View style={styles.container}>
         <TouchableOpacity onPress={toggleCamera} style={styles.cameraButton}>
-          <Icon name="camera-alt" size={30} color="#FFF" />
-          {showCamera && <CameraScan />}
+          {showCamera ? (
+            <>
+              <Icon name="close" size={30} color="#FFF" />
+              <CameraScan />
+            </>
+           ) : (
+             <Icon name="camera-alt" size={30} color="#FFF" />
+          )}
         </TouchableOpacity>
       </View>
 
