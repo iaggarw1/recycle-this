@@ -99,25 +99,32 @@ export const useAudioRecorder = () => {
   };
 
   const stopRecording = async () => {
-    // Stop recording logic
-    // Process recording and convert to Base64
-    // Send to Speech-to-Text API
     setRecording(undefined);
-
-    await recording.stopAndUnloadAsync();
-    console.log("recording stopped")
-    let allRecordings = [...recordings];
-    const { sound, status } = await recording.createNewLoadedSoundAsync();
-    allRecordings.push({
-      sound: sound,
-      file: recording.getURI(),
-    });
-
-    setRecordings(allRecordings);
-    const uri = recording.getURI();
-    const base64Audio = await convertAudioToBase64(uri);
-
-    const transcription = await sendAudioToSpeechToTextAPI(base64Audio);
+    let transcription = null;
+  
+    try {
+      await recording.stopAndUnloadAsync();
+      console.log("Recording stopped");
+  
+      let allRecordings = [...recordings];
+      const { sound, status } = await recording.createNewLoadedSoundAsync();
+  
+      allRecordings.push({
+        sound: sound,
+        file: recording.getURI(),
+      });
+  
+      setRecordings(allRecordings);
+      const uri = recording.getURI();
+      const base64Audio = await convertAudioToBase64(uri);
+  
+      transcription = await sendAudioToSpeechToTextAPI(base64Audio);
+      console.log("Transcription:", transcription);
+    } catch (error) {
+      console.error("Error during recording or transcription:", error);
+    }
+  
+    return transcription;
   };
 
   const playRecording = async (uri) => {
